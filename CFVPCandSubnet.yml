@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: VPC and Subnet Create
+
+Resources: 
+  # VPCの定義
+  RaiseTechCFtestVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: RaiseTechCFtestVPC
+
+  # サブネットの定義
+  CFPublicSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      VpcId: !Ref RaiseTechCFtestVPC
+      CidrBlock: 10.0.0.0/24
+      Tags:
+        - Key: Name
+          Value: CFPublicSubnet1a
+  CFPublicSubnet1d:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1d
+      VpcId: !Ref RaiseTechCFtestVPC
+      CidrBlock: 10.0.2.0/24
+      Tags:
+        - Key: Name
+          Value: CFPublicSubnet1d
+  CFPrivateSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      VpcId: !Ref RaiseTechCFtestVPC
+      CidrBlock: 10.0.1.0/24
+      Tags:
+        - Key: Name
+          Value: CFPrivateSubnet1a
+  CFPrivateSubnet1d:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1d
+      VpcId: !Ref RaiseTechCFtestVPC
+      CidrBlock: 10.0.3.0/24
+      Tags:
+        - Key: Name
+          Value: CFPrivateSubnet1d
+
+  # インターネットゲートウェイの定義        
+  Igw:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: RaiseTehcCFtestigw
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref RaiseTechCFtestVPC
+      InternetGatewayId: !Ref Igw
+
+  # ルートテーブルの定義    
+  CFRoutetable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref RaiseTechCFtestVPC
+      Tags:
+        - Key: Name
+          Value: CFRoutetable
+
+  # インターネットゲートウェイとルートテーブルの関連付け        
+  CFRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref CFRoutetable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref Igw
+
+  # サブネットとルートテーブルの関連付け    
+  CFRoutetableAssociation1a:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref CFPublicSubnet1a
+      RouteTableId: !Ref CFRoutetable
+  CFRoutetableAssociation1d:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref CFPublicSubnet1d
+      RouteTableId: !Ref CFRoutetable
+
+  # セキュリティグループの定義
+  CFSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: This security Group is for CFtest
+      VpcId: !Ref RaiseTechCFtestVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: For HTTP
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: For SSH
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+          Description: For rails  
+      Tags:
+        - Key: Name
+          Value: CFSecurityGroup
