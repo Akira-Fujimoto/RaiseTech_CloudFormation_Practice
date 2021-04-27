@@ -1,5 +1,17 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: VPC and Subnet Create
+Description: VPC,Subnet and EC2Instance Create
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 KeyPair for SSH access
+  InstanceTypeParameter:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+    Description: Enter t2.micro or t3.micro. Default is t2.micro
 
 Resources: 
   # VPCの定義
@@ -118,3 +130,20 @@ Resources:
       Tags:
         - Key: Name
           Value: CFSecurityGroup
+
+  # EC2インスタンスの定義
+  CFEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      SubnetId: !Ref CFPublicSubnet1a
+      AvailabilityZone: ap-northeast-1a
+      KeyName: !Ref KeyName
+      ImageId: ami-06098fd00463352b6
+      InstanceType: 
+        Ref: InstanceTypeParameter
+      Monitoring: false
+      SecurityGroupIds:
+        - !Ref CFSecurityGroup
+      Tags:
+        - Key: Name
+          Value: CFEC2Instance       
